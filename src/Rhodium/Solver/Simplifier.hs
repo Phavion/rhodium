@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE BangPatterns #-}
 -- | Simplification algorithm of OutsideIn(X)
 module Rhodium.Solver.Simplifier(simplifyGraph) where
 
