@@ -60,7 +60,7 @@ applyHeuristics :: HasTypeGraph m axiom touchable types constraint ci
                         -> TGGraph touchable types constraint ci 
                         -> m (TGGraph touchable types constraint ci, (ci, constraint, (constraint, ErrorLabel), TGEdge constraint))
 applyHeuristics heuristics path graph = do    
-    (ci, eid, l, gm) <- evalHeuristic (heuristics path) path graph
+    (ci, eid, l, gm) <- evalHeuristics (heuristics path) path graph
     let edge = getEdgeFromId graph eid
     logMsg ""
     logMsg " ------------------------------ "
@@ -79,18 +79,18 @@ applyGraphModifier param gm graph = do
     (, ci) <$> simplifyGraph False g'
 
 -- | Evaluate the heuristics on the path    
-evalHeuristic   :: HasTypeGraph m axiom touchable types constraint ci 
+evalHeuristics   :: HasTypeGraph m axiom touchable types constraint ci 
                 => [Heuristic m axiom touchable types constraint ci ] 
                 -> Path m axiom touchable types constraint ci -- ^Edges that are allowed to be modified, might nog be continious
                 -> TGGraph touchable types constraint ci 
                 -> m (ci, EdgeId, (constraint, ErrorLabel), GraphModifier m axiom touchable types constraint ci)
-evalHeuristic [] (Path _ []) _graph = error "All paths removed by heuristics"
-evalHeuristic [] (Path cl@(_, c, l) ((_, eid, ci, gm) : re)) _graph = do
+evalHeuristics [] (Path _ []) _graph = error "All paths removed by heuristics"
+evalHeuristics [] (Path cl@(_, c, l) ((_, eid, ci, gm) : re)) _graph = do
     logMsg " ---------- Result of heuristics ----------"
     logMsg ("Blamed edge: " ++ show eid ++ " with label " ++ show l)  
     unless (null re) (logMsg ("Remaining edges that cannot be reduced by heuristics: " ++ show (idsFromPath $ Path cl re)))
     return (ci, eid, (c, l), gm)
-evalHeuristic (h:hs) p@(Path label es) graph =
+evalHeuristics (h:hs) p@(Path label es) graph =
     if null es then error (show "Current heuristic" ++ show h) else
     case h of
         Filter s f -> do
@@ -99,7 +99,7 @@ evalHeuristic (h:hs) p@(Path label es) graph =
             logMsg ("  Removing edges: " ++ show (map (\(_, ei, _, _) -> ei) $ filter (\(_, ei, _, _) -> ei `notElem` idsFromPath (Path label es')) es))
             logMsg ("  Remainging edges: " ++ show (idsFromPath (Path label es')))
             when (null es') (error (s ++ " removed everything!")) 
-            evalHeuristic hs (Path label es') (updateConstraintInformation (map (\(_, ei, ci, _) -> (ei, ci)) es') graph)
+            evalHeuristics hs (Path label es') (updateConstraintInformation (map (\(_, ei, ci, _) -> (ei, ci)) es') graph)
         Voting vhs -> do
             logMsg ("Apply " ++ show (length vhs) ++ " voting heuristics")
             res <- mapM (evalVoteHeuristic p) vhs
@@ -116,12 +116,12 @@ evalHeuristic (h:hs) p@(Path label es) graph =
                 [] ->   do 
                             logMsg "Unfortunately, none of the heuristics could be applied"
                             when (null es) (error ("voting" ++ " removed everything!")) 
-                            evalHeuristic hs p graph
+                            evalHeuristics hs p graph
                 _  ->   do 
                             when (null remainingEdges) (error ("voting" ++ " removed everything!")) 
                             logMsg ("Apply voting result: " ++ show heuristicNames)
                             logMsg ("Selected with priority "++show thePrio++": "++ show (map (\(_, ei, _, _) -> ei) remainingEdges) ++"\n")
-                            evalHeuristic hs (Path label remainingEdges) (updateConstraintInformation (map (\(_, ei, ci, _) -> (ei, ci)) remainingEdges) graph)
+                            evalHeuristics hs (Path label remainingEdges) (updateConstraintInformation (map (\(_, ei, ci, _) -> (ei, ci)) remainingEdges) graph)
 
 -- | Evaluate a voting heuristic, letting all voting heuristics vote on the path        
 evalVoteHeuristic   :: HasTypeGraph m axiom touchable types constraint ci 

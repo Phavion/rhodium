@@ -14,6 +14,8 @@ import Data.List
 import Rhodium.TypeGraphs.GraphProperties
 import Rhodium.TypeGraphs.TGState
 import Rhodium.TypeGraphs.Graph
+import Data.Functor.Identity
+import Control.Monad.IO.Class (MonadIO(..) )
 
 
 -- | An instance for storing the axioms in the TGState
@@ -142,3 +144,9 @@ instance Monad m => HasOriginalConstraints (TGStateM m axiom touchable types con
             originalInput = input
         }
     getOriginalInput = originalInput <$> get
+
+instance MonadFail Identity where
+    fail = error
+
+instance MonadIO Identity where
+    liftIO = error "Identity error"

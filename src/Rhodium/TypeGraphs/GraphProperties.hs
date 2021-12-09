@@ -11,6 +11,7 @@ import Rhodium.TypeGraphs.Touchables
 import Rhodium.TypeGraphs.Graph
 
 import Rhodium.Blamer.HeuristicProperties
+import Control.Monad.IO.Class (MonadIO)
 
 import qualified Data.Map.Strict as M
 
@@ -204,6 +205,8 @@ class (
     ,   HasLogInfo m
     ,   TypeErrorInfo m constraint ci
     ,   HasOriginalConstraints m constraint touchable
+    ,   MonadFail m
+    ,   MonadIO m
     ) => HasTypeGraph m axiom touchable types constraint ci
     
 -- | An instance, if all necessary properties are given, the type graph instance exists
@@ -240,6 +243,8 @@ instance (
     ,   HasLogInfo m
     ,   TypeErrorInfo m constraint ci
     ,   HasOriginalConstraints m constraint touchable
+    ,   MonadFail m
+    ,   MonadIO m
     ) => HasTypeGraph m axiom touchable types constraint ci
     
          

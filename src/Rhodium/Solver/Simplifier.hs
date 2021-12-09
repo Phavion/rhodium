@@ -82,15 +82,15 @@ applyCanonRule edgeIndex graph = do
     result <- canon (isEdgeGiven edge) (getConstraintFromEdge edge)
     let graph' = markEdgeTried (SingleRule Canon) edge graph
     if not (isErrorResult result) then
-            if isJust (isApplied result) then do
-                let (touchables, _subsitution, constraints) = fromJust (isApplied result)
-                let graph'' = markEdgeResolved (getGroupFromEdge edge) (Resolved Canon [edgeId edge]) edge graph'
-                ruleIsApplied Canon [getConstraintFromEdge edge] (show result)
-                applyCanonResult edge touchables constraints graph''
-            else
-                return graph'
+        if isJust (isApplied result) then do
+            let (touchables, _subsitution, constraints) = fromJust (isApplied result)
+            let graph'' = markEdgeResolved (getGroupFromEdge edge) (Resolved Canon [edgeId edge]) edge graph'
+            ruleIsApplied Canon [getConstraintFromEdge edge] (show result)
+            applyCanonResult edge touchables constraints graph''
         else
-            return $ markEdgeResolved (getGroupFromEdge edge) (Resolved Canon [edgeId edge]) edge $ makeIncorrect (getErrorLabel result) edge graph'
+            return graph'
+    else
+        return $ markEdgeResolved (getGroupFromEdge edge) (Resolved Canon [edgeId edge]) edge $ makeIncorrect (getErrorLabel result) edge graph'
             
 
 applyCanonResult :: (HasTypeGraph m axiom touchable types constraint ci) => TGEdge constraint -> [touchable] -> [constraint] -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
