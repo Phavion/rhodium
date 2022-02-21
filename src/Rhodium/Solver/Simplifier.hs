@@ -219,5 +219,4 @@ resolvePriorityConstraints ignoreTouchable group' p g
                 gResolved 
                 (incorrectEdges ++ unresolvedOther)
         return gErrors
-    | otherwise = return g    
-
+    | otherwise = return g

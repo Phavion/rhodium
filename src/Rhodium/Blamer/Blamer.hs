@@ -20,6 +20,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO  )
 import qualified Data.Map as M
 
 import Control.Arrow
+import Debug.Trace
 
 
 -- | Try to improve the found errors and residual constraints using the provided heuristics
@@ -37,7 +38,7 @@ blamePaths :: (HasTypeGraph m axiom touchable types constraint ci ) => [EdgeId] 
 blamePaths notAllowedInPaths typeHeuristics g = do
     setGraph g
     let ps = sortPaths $ map (excludeEdges notAllowedInPaths) $ getProblemEdges g
-    if any isPathEmpty ps then
+    if any isPathEmpty (trace (show ps) ps) then
         error $ show ("Any path empty", notAllowedInPaths)
     else if null ps then
         return g

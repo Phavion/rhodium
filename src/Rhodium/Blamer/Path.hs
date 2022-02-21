@@ -24,7 +24,7 @@ data Path m axiom touchable types constraint ci = Path (EdgeId, constraint, Erro
 
 -- | Show instance for the path
 instance (Show constraint) => Show (Path m axiom touchable types constraint ci) where
-    show p@(Path (eid, constraint', el) _ids) = "Path(" ++ show eid ++ ", " ++ show constraint' ++ ", " ++ show el ++ ") " ++ show (idsFromPath p)
+    show p@(Path (eid, constraint', el) _ids) = "Path(" ++ show eid ++ ", " ++ show constraint' ++ ", " ++ show el ++ ") " ++ show (idsConstrFromPath p)
 
 instance (Eq constraint) => Eq (Path m axiom touchable types constraint ci) where
     (Path t1 ids1) == (Path t2 ids2) = t1 == t2 && let f = map (\(c, eid, _, _) -> (c, eid)) in f ids1 == f ids2
@@ -59,6 +59,8 @@ mergePaths = nubBy same . map merge . groupBy same . sortOn constraintFromPath
 idsFromPath :: Path m axiom touchable types constraint ci -> [EdgeId]
 idsFromPath (Path _ ps) = map (\(_, ei, _, _) -> ei) ps
 
+idsConstrFromPath :: Path m axiom touchable types constraint ci -> [(constraint, EdgeId)]
+idsConstrFromPath (Path _ ps) = map (\(c, ei, _, _) -> (c,ei)) ps
 -- | Get the original error constraint from the path
 constraintFromPath :: Path m axiom touchable types constraint ci -> constraint
 constraintFromPath (Path (_, constraint', _) _) = constraint'
