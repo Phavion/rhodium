@@ -33,10 +33,10 @@ solve options axioms given wanted touchables = do
     g <- constructGraph given wanted touchables
     setGraph g
     simpG <- simplifyGraph (includeTouchables options) g
-    if typeErrorDiagnosis options && hasErrors simpG then
+    if typeErrorDiagnosis options && hasErrors axioms simpG then
         blameError (typeHeuristics options) touchables (trace (show simpG) simpG)
     else
-        return (graphToSolveResult (includeTouchables options) touchables simpG) -- (trace (show simpG) simpG))
+        return (graphToSolveResult axioms (includeTouchables options) touchables simpG)
   
 constructGraph :: (HasTypeGraph m axiom touchable types constraint ci) => [constraint] -> [constraint] -> [touchable] -> m (TGGraph touchable types constraint ci)
 constructGraph given wanted touchables = do

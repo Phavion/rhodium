@@ -27,17 +27,19 @@ import Debug.Trace
 blameError :: (HasTypeGraph m axiom touchable types constraint ci, MonadIO m ) => Heuristics m axiom touchable types constraint ci -> [touchable] -> TGGraph touchable types constraint ci -> m (SolveResult touchable types constraint ci)
 blameError typeHeuristics ts g = do
     -- all paths
+    axs <- getAxioms 
     g'' <- blamePaths [] typeHeuristics g
     simpG <- simplifyGraph False g''
     simpG' <- modifyResolvedErrors createTypeError simpG
     logs <- getLogs
     liftIO (putStrLn logs)
-    return (graphToSolveResult False ts simpG')
+    return (graphToSolveResult axs False ts simpG')
 
 blamePaths :: (HasTypeGraph m axiom touchable types constraint ci ) => [EdgeId] -> Heuristics m axiom touchable types constraint ci -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 blamePaths notAllowedInPaths typeHeuristics g = do
     setGraph g
-    let ps = sortPaths $ map (excludeEdges notAllowedInPaths) $ getProblemEdges g
+    axs <- getAxioms 
+    let ps = sortPaths $ map (excludeEdges notAllowedInPaths) $ getProblemEdges axs g
     if any isPathEmpty (trace (show ps) ps) then
         error $ show ("Any path empty", notAllowedInPaths)
     else if null ps then

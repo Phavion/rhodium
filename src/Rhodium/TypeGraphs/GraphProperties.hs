@@ -122,13 +122,13 @@ class ConstraintSymbol constraint where
     showConstraintSymbol :: constraint -> String
 
 -- | To handle equaltiy constraints
-class IsEquality types constraint touchable | constraint -> types touchable where
+class IsEquality axiom types constraint touchable | constraint -> types touchable axiom where
     -- | Determines whether a constraint is an equiltiy constraint (~)
     isEquality :: constraint -> Bool
     -- | Split the equaltiy constraint into a left and a right part
     splitEquality :: constraint -> (types, types)
     -- | Excludes constraints from substitution, for example for containting type families
-    allowInSubstitution :: constraint -> Bool
+    allowInSubstitution :: [axiom] -> [touchable] -> constraint -> Bool
 
    
 -- | Detecting whether a variable is touchable in the current scope
@@ -184,7 +184,7 @@ class (
     ,   CanConvertConstraint m touchable  types constraint ci
     ,   ConvertConstructor types
     ,   CanCompareTouchable touchable types
-    ,   IsEquality types constraint touchable
+    ,   IsEquality axiom types constraint touchable
     ,   IsTouchable m touchable
     ,   FreeVariables constraint touchable
     ,   FreeVariables types touchable
@@ -222,7 +222,7 @@ instance (
     ,   CanConvertConstraint m touchable  types constraint ci
     ,   ConvertConstructor types
     ,   CanCompareTouchable touchable types
-    ,   IsEquality types constraint touchable
+    ,   IsEquality axiom types constraint touchable
     ,   IsTouchable m touchable
     ,   FreeVariables constraint touchable
     ,   FreeVariables types touchable

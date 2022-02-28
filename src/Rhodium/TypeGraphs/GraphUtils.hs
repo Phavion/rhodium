@@ -21,14 +21,14 @@ import Rhodium.TypeGraphs.Graph
     , getEdgeFromId
     , getVertexFromId
     )
-import Rhodium.TypeGraphs.GraphProperties 
+import Rhodium.TypeGraphs.GraphProperties
     ( CompareTypes (..)
     , FreeVariables (..)
     , HasConstraintInfo (..)
     , HasGraph (..)
     , HasTypeGraph
     , IsEquality (..)
-    , getGraph
+    , getGraph, HasAxioms (getAxioms)
     )
 import Rhodium.Solver.Rules (Rule (..), ErrorLabel (..), labelResidual)
 
@@ -279,9 +279,14 @@ isUnresolvedConstraintEdgeSub _ _ = False
 
 
 -- | Check if the edge is residual in the specific group
-isResidual :: (Show touchable, Show types, Show constraint, IsEquality types constraint touchable) => Groups -> TGGraph touchable types constraint ci -> TGEdge constraint -> Bool 
-isResidual gr g e = odd (getPriorityFromEdge e) && not (isEdgeGiven e) && isUnresolvedConstraintEdge gr e && (isIncorrect (edgeCategory e) == Just labelResidual || (
-    case (allowInSubstitution (getConstraintFromEdge e), isConstraintTouchable 0 g e ||  isConstraintTouchable 1 g e) of
+isResidual :: (Show touchable, Show types, Show constraint, IsEquality axiom types constraint touchable) 
+            => Groups
+            -> [axiom] 
+            -> TGGraph touchable types constraint ci 
+            -> TGEdge constraint 
+            -> Bool 
+isResidual gr axs g e = odd (getPriorityFromEdge e) && not (isEdgeGiven e) && isUnresolvedConstraintEdge gr e && (isIncorrect (edgeCategory e) == Just labelResidual || (
+    case (allowInSubstitution axs (map fst $ getTouchablesFromGraph False g) (getConstraintFromEdge e), isConstraintTouchable 0 g e ||  isConstraintTouchable 1 g e) of
         (False, _) -> True 
         (True, False) -> True
         (True, True) -> False
@@ -294,7 +299,7 @@ markEdgesUnresolved group g = g{
     }
 
 -- | Return a list with the possible types for an type
-getPossibleTypes :: (Show touchable, Show constraint, Show types, Monad m, Eq types, IsEquality types constraint touchables, HasGraph m touchable types constraint ci, CanCompareTouchable touchables types) => Groups -> types -> m [(types, TGEdge constraint)]
+getPossibleTypes :: (Show touchable, Show constraint, Show types, Monad m, Eq types, IsEquality axiom types constraint touchables, HasGraph m touchable types constraint ci, CanCompareTouchable touchables types) => Groups -> types -> m [(types, TGEdge constraint)]
 getPossibleTypes groups' t = getGraph >>= \graph -> return (mapMaybe (\e -> 
         let 
             constraint' = getConstraintFromEdge e
@@ -311,8 +316,12 @@ getSubstType1 :: (CompareTypes m types, HasTypeGraph m axiom touchable types con
 getSubstType1 = getSubstTypeFull [0]
 
 -- | Get the substituted type of the given type
-getSubstTypeFull :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci) => Groups -> types -> m types
+getSubstTypeFull :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci) 
+                 => Groups 
+                 -> types 
+                 -> m types
 getSubstTypeFull groups' types = do
+    axs <- getAxioms 
     let typeFV = getFreeVariables types
     fvSub <- catMaybes <$> mapM 
             (\fv ->     getPossibleTypes groups' (convertTouchable fv) >>= 
@@ -353,14 +362,18 @@ getSubstTypeFull groups' types = do
                     (Just v1, _) -> Just (v1, t2)
                 ) $ filter (\e -> isConstraintEdge e && isGiven (edgeCategory e) && isEquality (getConstraintFromEdge e) && (null groups' || groups' == getGroupFromEdge e)) $ M.elems $ edges graph
     
-    return $ applySubstitution (getSubstitutionFromGraph groups' graph) $ applySubstitution (graphToSubstition groups' graph) $ applySubstitution givenSub $ applySubstitution fvSub types
+    return $ applySubstitution (getSubstitutionFromGraph groups' axs graph) $ applySubstitution (graphToSubstition groups' graph) $ applySubstitution givenSub $ applySubstitution fvSub types
 
 isVertexVariable :: Priority -> TGVertexCategory touchable types -> Bool
 isVertexVariable p v@TGVariable{}   = isJust (isTouchable v) && isTouchable v <= Just p
 isVertexVariable _ _                = False
 
-getSubstitutionFromGraph :: (Eq types, IsEquality types constraint touchable, CanCompareTouchable touchable types, Show touchable, Show types, Show constraint) => Groups -> TGGraph touchable types constraint ci -> [(touchable, types)]
-getSubstitutionFromGraph group graph = let
+getSubstitutionFromGraph :: (Eq types, IsEquality axiom types constraint touchable, CanCompareTouchable touchable types, Show touchable, Show types, Show constraint) 
+                         => Groups
+                         -> [axiom]
+                         -> TGGraph touchable types constraint ci 
+                         -> [(touchable, types)]
+getSubstitutionFromGraph group axs graph = let
         prior   | null group    = 1
                 | otherwise     = (length group - 1) * 2 + 1
         touchables = M.elems $ M.map variable $ M.filter (isVertexVariable prior) (vertices graph)
@@ -369,7 +382,7 @@ getSubstitutionFromGraph group graph = let
         unifyC = map getConstraintFromEdge 
                     $ filter 
                         (\e -> isConstraintEdge e 
-                            && allowInSubstitution (getConstraintFromEdge e) 
+                            && allowInSubstitution axs (map fst $ getTouchablesFromGraph False graph) (getConstraintFromEdge e) 
                             && getGroupFromEdge e `isSuffixOf` group 
                             && let
                                     (v, _) = splitEquality (getConstraintFromEdge e) 
@@ -384,7 +397,7 @@ getSubstitutionFromGraph group graph = let
 
 -- | Convert the graph to a substitution
 graphToSubstition 
-    :: (Eq touchable, Eq types, IsEquality types constraint touchable, Show constraint, Show types, Show touchable, CanCompareTouchable touchable types) 
+    :: (Eq touchable, Eq types, IsEquality axiom types constraint touchable, Show constraint, Show types, Show touchable, CanCompareTouchable touchable types) 
     => Groups 
     -> TGGraph touchable types constraint ci 
     -> [(touchable, types)]
@@ -422,3 +435,11 @@ getNeighbours eid = do
 -- | Return all edges with a specific constraints (both given and wanted)
 getEdgesWithConstraint :: (Show constraint, Eq constraint) => TGGraph touchable types constraint ci -> constraint -> [EdgeId]
 getEdgesWithConstraint g c = map edgeId $ filter (\e -> isConstraintEdge e && getConstraintFromEdge e == c) (M.elems $ edges g)
+
+getTouchablesFromGraph :: Bool -> TGGraph touchable types constraint ci -> [(touchable, VertexId)]
+getTouchablesFromGraph allowTouchable g = mapMaybe getTouchable (M.toList (vertices g))
+    where
+        getTouchable :: (VertexId, TGVertexCategory touchable types) -> Maybe (touchable, VertexId)
+        getTouchable (vid, c@TGVariable{})  | allowTouchable || isTouchable c == Just 0 || isTouchable c == Just 1 = Just (variable c, vid)
+                                            | otherwise = Nothing
+        getTouchable _                      = Nothing

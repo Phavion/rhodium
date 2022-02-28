@@ -33,11 +33,16 @@ emptySolveResult :: SolveResult touchable types constraint ci
 emptySolveResult = SolveResult [] [] [] [] emptyTGGraph
 
 -- | Convert a graph to a SolveResult
-graphToSolveResult ::  (Show ci, HasConstraintInfo constraint ci, Eq types, Eq touchable, Show types, Show touchable, Show constraint, IsEquality types constraint touchable, CanCompareTouchable touchable types) => Bool -> [touchable] -> TGGraph touchable types constraint ci -> SolveResult touchable types constraint ci
-graphToSolveResult allowTouchable ts g = let
+graphToSolveResult ::  (Show ci, HasConstraintInfo constraint ci, Eq types, Eq touchable, Show types, Show touchable, Show constraint, IsEquality axiom types constraint touchable, CanCompareTouchable touchable types) 
+                   => [axiom]
+                   -> Bool 
+                   -> [touchable] 
+                   -> TGGraph touchable types constraint ci 
+                   -> SolveResult touchable types constraint ci
+graphToSolveResult axs allowTouchable ts g = let
     bg = nub $ filter (\g'' -> length g'' == 1) $ map getGroupFromEdge $ filter isConstraintEdge $ M.elems (edges g)
     g' =  markEdgesUnresolved (head bg) g
-    (subEdges, resEdges) = partition (isSubstitutionEdge allowTouchable g') 
+    (subEdges, resEdges) = partition (isSubstitutionEdge allowTouchable axs g') 
         (if allowTouchable then getUnresolvedConstraintEdges' g' else getUnresolvedConstraintEdges (head bg) g')
     touchables' = map fst $ getTouchablesFromGraph allowTouchable g'
     substitution' = getSubstitutionFromGraph (nub $ ts ++ touchables') subEdges
@@ -47,22 +52,19 @@ graphToSolveResult allowTouchable ts g = let
 
 
 
-isSubstitutionEdge :: (Show types, Show touchable, Show constraint, IsEquality types constraint touchable) => Bool -> TGGraph touchable types constraint ci -> TGEdge constraint -> Bool
-isSubstitutionEdge allowTouchable g edge     | not allowTouchable && (isEdgeGiven edge || priority (edgeCategory edge) == 0) = True
-                                                | not (allowInSubstitution (getConstraintFromEdge edge)) = False
+isSubstitutionEdge :: (Show types, Show touchable, Show constraint, IsEquality axiom types constraint touchable) 
+                   => Bool
+                   -> [axiom]
+                   -> TGGraph touchable types constraint ci 
+                   -> TGEdge constraint 
+                   -> Bool
+isSubstitutionEdge allowTouchable axs g edge     | not allowTouchable && (isEdgeGiven edge || priority (edgeCategory edge) == 0) = True
+                                                | not (allowInSubstitution axs (map fst $ getTouchablesFromGraph False g) (getConstraintFromEdge edge)) = False
                                                 | not allowTouchable && not (isConstraintTouchable 0 g edge) = False
                                                 | not allowTouchable && priority (edgeCategory edge) > 1 = False
                                                 | otherwise = True
 
-getTouchablesFromGraph :: Bool -> TGGraph touchable types constraint ci -> [(touchable, VertexId)]
-getTouchablesFromGraph allowTouchable g = mapMaybe getTouchable (M.toList (vertices g))
-    where
-        getTouchable :: (VertexId, TGVertexCategory touchable types) -> Maybe (touchable, VertexId)
-        getTouchable (vid, c@TGVariable{})  | allowTouchable || isTouchable c == Just 0 || isTouchable c == Just 1 = Just (variable c, vid)
-                                            | otherwise = Nothing
-        getTouchable _                      = Nothing
-
-getSubstitutionFromGraph :: (Eq types, Show touchable, Show types, Show constraint, IsEquality types constraint touchable, CanCompareTouchable touchable types) => [touchable] -> [TGEdge constraint] -> [(touchable, types)]
+getSubstitutionFromGraph :: (Eq types, Show touchable, Show types, Show constraint, IsEquality axiom types constraint touchable, CanCompareTouchable touchable types) => [touchable] -> [TGEdge constraint] -> [(touchable, types)]
 getSubstitutionFromGraph ts constraints = let 
         initialSub = map (\v -> (v, convertTouchable v)) ts
         splitConstraints = map (splitEquality . getConstraintFromEdge) constraints
@@ -70,7 +72,7 @@ getSubstitutionFromGraph ts constraints = let
     in map (\(v, t) -> (v, findSub t)) initialSub
 
            
-getErrorsFromGraph :: (Show ci, HasConstraintInfo constraint ci, IsEquality types constraint touchable, Show constraint, Show types, Show touchable) => TGGraph touchable types constraint ci -> [TGEdge constraint] -> [(ci, constraint, ErrorLabel)]
+getErrorsFromGraph :: (Show ci, HasConstraintInfo constraint ci, IsEquality axiom types constraint touchable, Show constraint, Show types, Show touchable) => TGGraph touchable types constraint ci -> [TGEdge constraint] -> [(ci, constraint, ErrorLabel)]
 getErrorsFromGraph g res = let 
         errorLabels1 = mapMaybe (\e -> case getIsIncorrect e of
                     Nothing -> Nothing 

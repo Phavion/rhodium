@@ -44,8 +44,8 @@ extendErrorEdges gm f g = let
     in if any isPathEmpty res then error $ show ("Path empty", res) else res
 
 -- | Return all the type error edges
-getProblemEdges :: HasTypeGraph m axiom touchable types constraint ci => TGGraph touchable types constraint ci -> [Path m axiom touchable types constraint ci]
-getProblemEdges g =  mergePaths (extendErrorEdges defaultRemoveModifier getErrorEdges g ++ extendErrorEdges defaultRemoveModifier (getResidualEdges g) g)
+getProblemEdges :: HasTypeGraph m axiom touchable types constraint ci => [axiom] -> TGGraph touchable types constraint ci -> [Path m axiom touchable types constraint ci]
+getProblemEdges axs g =  mergePaths (extendErrorEdges defaultRemoveModifier getErrorEdges g ++ extendErrorEdges defaultRemoveModifier (getResidualEdges axs g) g)
 
 mergePaths :: (Ord constraint, Show constraint, Eq constraint) => [Path m axiom touchable types constraint ci] -> [Path m axiom touchable types constraint ci]
 mergePaths = nubBy same . map merge . groupBy same . sortOn constraintFromPath

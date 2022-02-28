@@ -205,7 +205,7 @@ applyReactResult edge (Applied (vars, ncs)) graph = do
         $ markTouchables (map (\v -> (v, priority $ edgeCategory edge)) vars) 
         $ insertGraphs g' ncs'
 
-resolvePriorityConstraints :: (Show touchable, Show types, Monad m, Eq constraint, IsEquality types constraint touchable, Show constraint) => Bool -> Groups -> Priority -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+resolvePriorityConstraints :: (Show touchable, Show types, Monad m, Eq constraint, IsEquality axiom types constraint touchable, Show constraint) => Bool -> Groups -> Priority -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 resolvePriorityConstraints ignoreTouchable group' p g 
     | odd p, p > 1 = do
         let (unresolvedUnify, unresolvedOther) 

@@ -173,8 +173,9 @@ highParticipation ratio _path =
             selectTheBest :: HasTypeGraph m axiom touchable types constraint ci => [(constraint, EdgeId, ci, GraphModifier m axiom touchable types constraint ci)] -> m [(constraint, EdgeId, ci, GraphModifier m axiom touchable types constraint ci)]
             selectTheBest es = do
                 graph <- getGraph
+                axs <- getAxioms
                 let paths = mergePaths (extendErrorEdges (error "Unneeded graph modifier") getErrorEdges graph ++ 
-                            extendErrorEdges (error "Unneeded graph modifier") (getResidualEdges graph) graph)
+                            extendErrorEdges (error "Unneeded graph modifier") (getResidualEdges axs graph) graph)
                 logMsg (show paths)
                 let (nrOfPaths, fm)   = participationMap paths 
                     participationList = M.filterWithKey p fm
