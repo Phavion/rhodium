@@ -24,16 +24,16 @@ import Debug.Trace
 
 
 -- | Try to improve the found errors and residual constraints using the provided heuristics
-blameError :: (HasTypeGraph m axiom touchable types constraint ci, MonadIO m ) => Heuristics m axiom touchable types constraint ci -> [touchable] -> TGGraph touchable types constraint ci -> m (SolveResult touchable types constraint ci)
-blameError typeHeuristics ts g = do
+blameError :: (HasTypeGraph m axiom touchable types constraint ci, MonadIO m ) => Heuristics m axiom touchable types constraint ci -> TypeErrorOptions -> [touchable] -> TGGraph touchable types constraint ci -> m (SolveResult touchable types constraint ci)
+blameError typeHeuristics typeErrorOptions ts g = do
     -- all paths
     axs <- getAxioms 
     g'' <- blamePaths [] typeHeuristics g
     simpG <- simplifyGraph False g''
-    simpG' <- modifyResolvedErrors createTypeError simpG
+    simpG' <- modifyResolvedErrors (createTypeError typeErrorOptions) simpG
     logs <- getLogs
     liftIO (putStrLn logs)
-    return (graphToSolveResult axs False ts simpG')
+    return (graphToSolveResult axs False ts simpG') --(trace logs simpG'))
 
 blamePaths :: (HasTypeGraph m axiom touchable types constraint ci ) => [EdgeId] -> Heuristics m axiom touchable types constraint ci -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 blamePaths notAllowedInPaths typeHeuristics g = do

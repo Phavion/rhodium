@@ -24,7 +24,8 @@ import Rhodium.Solver.SolveOptions
 import Rhodium.Solver.Simplifier
 
 import Control.Monad.IO.Class (MonadIO )
-import Debug.Trace (trace)
+import Rhodium.Blamer.HeuristicProperties (TypeErrorOptions(TEOptions, showTrace))
+--import Debug.Trace (trace)
 
 -- | Given a list of axioms, given constraints, wanted constraints and a number of touchables, solve solves the constraints using OutsideIn(X)
 solve :: (HasTypeGraph m axiom touchable types constraint ci, MonadIO m) => SolveOptions m axiom touchable types constraint ci -> [axiom] -> [constraint] -> [constraint] -> [touchable] -> m (SolveResult touchable types constraint ci)
@@ -33,8 +34,11 @@ solve options axioms given wanted touchables = do
     g <- constructGraph given wanted touchables
     setGraph g
     simpG <- simplifyGraph (includeTouchables options) g
-    if typeErrorDiagnosis options && hasErrors axioms simpG then
-        blameError (typeHeuristics options) touchables (trace (show simpG) simpG)
+    if typeErrorDiagnosis options && hasErrors axioms simpG then do
+        let typeErrorOptions = TEOptions {
+            showTrace = teMustShowTrace options
+        }
+        blameError (typeHeuristics options) typeErrorOptions touchables simpG -- (trace (show simpG) simpG)
     else
         return (graphToSolveResult axioms (includeTouchables options) touchables simpG)
   

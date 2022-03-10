@@ -10,7 +10,8 @@ data SolveOptions m axiom touchable types constraint ci = SolveOptions{
     typeHeuristics :: Path m axiom touchable types constraint ci -> [Heuristic m axiom touchable types constraint ci],
     residualHeuristics :: ResidualHeuristics m axiom touchable types constraint ci,
     typeErrorDiagnosis :: Bool, 
-    includeTouchables :: Bool
+    includeTouchables :: Bool,
+    teMustShowTrace :: Bool
     }
 
 -- | No Solver options
@@ -19,7 +20,8 @@ emptySolveOptions = SolveOptions {
         typeHeuristics = const [],
         residualHeuristics = const [],
         typeErrorDiagnosis = True,
-        includeTouchables = False
+        includeTouchables = False,
+        teMustShowTrace = True
     }
 
 -- | Disables the process of type error diagnosis. Can be used when the only information of interest is success or failure, not which exact error has occured.
