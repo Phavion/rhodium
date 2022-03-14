@@ -25,7 +25,7 @@ import Rhodium.Solver.Simplifier
 
 import Control.Monad.IO.Class (MonadIO )
 import Rhodium.Blamer.HeuristicProperties (TypeErrorOptions(TEOptions, showTrace))
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 -- | Given a list of axioms, given constraints, wanted constraints and a number of touchables, solve solves the constraints using OutsideIn(X)
 solve :: (HasTypeGraph m axiom touchable types constraint ci, MonadIO m) => SolveOptions m axiom touchable types constraint ci -> [axiom] -> [constraint] -> [constraint] -> [touchable] -> m (SolveResult touchable types constraint ci)
@@ -38,9 +38,9 @@ solve options axioms given wanted touchables = do
         let typeErrorOptions = TEOptions {
             showTrace = teMustShowTrace options
         }
-        blameError (typeHeuristics options) typeErrorOptions touchables simpG -- (trace (show simpG) simpG)
+        blameError (typeHeuristics options) typeErrorOptions touchables (trace (show simpG) simpG)
     else
-        return (graphToSolveResult axioms (includeTouchables options) touchables simpG)
+        return (graphToSolveResult axioms (includeTouchables options) touchables simpG) --(trace (show simpG) simpG))
   
 constructGraph :: (HasTypeGraph m axiom touchable types constraint ci) => [constraint] -> [constraint] -> [touchable] -> m (TGGraph touchable types constraint ci)
 constructGraph given wanted touchables = do
@@ -49,8 +49,12 @@ constructGraph given wanted touchables = do
         let g = mergeGraphs emptyTGGraph wanted'
         given' <- mapM (convertConstraint [] True True [groupIndex] 0) given
         let g' = mergeGraphs g given'
-        let gTouchables =  markTouchables (map (\v -> (v, 0)) touchables) g'
-        setGivenTouchables (concatMap getFreeVariables given) 
+        -- let wantedTch = concatMap getFreeVariables wanted
+        -- let givenTch = concatMap getFreeVariables given
+        -- let wTouchables = markTouchables (map (\v -> (v, 1)) (filter (\t -> t `elem` wantedTch && t `notElem` givenTch) touchables)) g'
+        -- let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) wTouchables
+        let gTouchables = markTouchables (map (\v -> (v, 1)) touchables) g'
+        setGivenTouchables (concatMap getFreeVariables given)
         return (markEdgesUnresolved [0] gTouchables)
 
 -- | Solves the given constraints and either returns a substitution or Nothing. Gives manual control over the solve options
