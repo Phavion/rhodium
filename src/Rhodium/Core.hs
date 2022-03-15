@@ -49,11 +49,11 @@ constructGraph given wanted touchables = do
         let g = mergeGraphs emptyTGGraph wanted'
         given' <- mapM (convertConstraint [] True True [groupIndex] 0) given
         let g' = mergeGraphs g given'
-        -- let wantedTch = concatMap getFreeVariables wanted
-        -- let givenTch = concatMap getFreeVariables given
-        -- let wTouchables = markTouchables (map (\v -> (v, 1)) (filter (\t -> t `elem` wantedTch && t `notElem` givenTch) touchables)) g'
-        -- let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) wTouchables
-        let gTouchables = markTouchables (map (\v -> (v, 1)) touchables) g'
+        let wantedTch = concatMap getFreeVariables wanted
+        let givenTch = concatMap getFreeVariables given
+        let wTouchables = markTouchables (map (\v -> (v, 1)) (filter (\t -> t `elem` wantedTch && t `notElem` givenTch) touchables)) g'
+        let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) wTouchables
+        -- let gTouchables = markTouchables (map (\v -> (v, 1)) touchables) g'
         setGivenTouchables (concatMap getFreeVariables given)
         return (markEdgesUnresolved [0] gTouchables)
 
