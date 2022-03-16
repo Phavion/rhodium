@@ -321,8 +321,10 @@ getSubstTypeFull :: (CompareTypes m types, HasTypeGraph m axiom touchable types 
                  -> types 
                  -> m types
 getSubstTypeFull groups' types = do
-    axs <- getAxioms 
-    let typeFV = getFreeVariables types
+    axs <- getAxioms
+    graph <- getGraph
+    let tchs = map fst $ getTouchablesFromGraph False graph
+    let typeFV = filter (`elem` tchs) $ getFreeVariables types
     fvSub <- catMaybes <$> mapM 
             (\fv ->     getPossibleTypes groups' (convertTouchable fv) >>= 
                 \pt -> 
@@ -351,8 +353,7 @@ getSubstTypeFull groups' types = do
                     else
                         return Nothing
                             
-            ) typeFV 
-    graph <- getGraph
+            ) typeFV
     let givenSub = mapMaybe (\e ->  let 
                     cons = getConstraintFromEdge e
                     (t1, t2) = splitEquality cons
@@ -396,17 +397,22 @@ getSubstitutionFromGraph group axs graph = let
 
 
 -- | Convert the graph to a substitution
-graphToSubstition 
-    :: (Eq touchable, Eq types, IsEquality axiom types constraint touchable, Show constraint, Show types, Show touchable, CanCompareTouchable touchable types) 
-    => Groups 
-    -> TGGraph touchable types constraint ci 
-    -> [(touchable, types)]
+graphToSubstition :: (Eq touchable, Eq types, IsEquality axiom types constraint touchable, Show constraint, Show types, Show touchable, CanCompareTouchable touchable types)  
+                  => Groups  
+                  -> TGGraph touchable types constraint ci 
+                  -> [(touchable, types)]
 graphToSubstition groups' g = nub $ mapMaybe (\e ->
         if isConstraintEdge e && isEquality (getConstraintFromEdge e) && (null groups' || getGroupFromEdge e == groups') then
             let 
-                (m1, m2) = splitEquality (getConstraintFromEdge e)
-                v1 = extractTouchable m1                     
-            in (\v -> (v, m2)) <$> v1
+                isVariable TGVariable{} = True
+                isVariable _ = False
+                (_, vt1) = getVertexFromId (from e) g
+                (m1, m2) = splitEquality $ getConstraintFromEdge e
+            -- Makes sure that the variable added to the substitution is touchable
+            in if isVariable vt1 && isJust (isTouchable vt1) 
+                then (\v -> (v, m2)) <$> extractTouchable m1
+                else Nothing
+                --v1 = extractTouchable m1                     
         else
             Nothing
     )
