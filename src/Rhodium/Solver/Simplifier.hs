@@ -19,11 +19,11 @@ import Rhodium.TypeGraphs.Touchables
 
 
 -- | Simplify a given graph
-simplifyGraph :: (HasTypeGraph m axiom touchable types constraint ci) => Bool -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
+simplifyGraph :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => Bool -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
 simplifyGraph ignoreTouchable graph = foldM (\g group -> simplifyGraph' ignoreTouchable group 0 g) graph (getGroupsFromGraph graph) 
 
 -- | Simplify a graph starting at a group and a priority
-simplifyGraph' :: (HasTypeGraph m axiom touchable types constraint ci) => Bool -> Groups -> Priority -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
+simplifyGraph' :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => Bool -> Groups -> Priority -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
 simplifyGraph' ignoreTouchable groups' priority' g = do
     resetRuleApplied
     setGraph g
@@ -48,7 +48,7 @@ simplifyGraph' ignoreTouchable groups' priority' g = do
         return (markEdgesUnresolved groups' g')
 
 
-applyRule   :: (HasTypeGraph m axiom touchable types constraint ci) 
+applyRule   :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) 
             => Priority 
             -> Rule 
             -> (EdgeId -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)) 
@@ -76,7 +76,7 @@ addUnresolvedConstraints cs g = g{
         nextUnresolvedConstraints = cs ++ nextUnresolvedConstraints g
     }
 
-applyCanonRule :: (HasTypeGraph m axiom touchable types constraint ci) => EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
+applyCanonRule :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
 applyCanonRule edgeIndex graph = do
     let edge = getEdgeFromId graph edgeIndex
     result <- canon (isEdgeGiven edge) (getConstraintFromEdge edge)
@@ -93,7 +93,7 @@ applyCanonRule edgeIndex graph = do
         return $ markEdgeResolved (getGroupFromEdge edge) (Resolved Canon [edgeId edge]) edge $ makeIncorrect (getErrorLabel result) edge graph'
             
 
-applyCanonResult :: (HasTypeGraph m axiom touchable types constraint ci) => TGEdge constraint -> [touchable] -> [constraint] -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
+applyCanonResult :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => TGEdge constraint -> [touchable] -> [constraint] -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
 applyCanonResult edge touchables constraints graph = do 
     constraints' <- mapM (convertConstraint [edgeId edge] False (isEdgeGiven edge) (groups (edgeCategory edge)) (priority (edgeCategory edge))) constraints
     let graph' = insertGraphs graph constraints'
@@ -104,7 +104,7 @@ applyCanonResult edge touchables constraints graph = do
         $ markInfluencesEdges (map edgeId newEdges) [edgeId edge] 
         $ markTouchables (map (\v -> (v, priority $ edgeCategory edge)) touchables) graph'
 
-applyInteractRule :: (HasTypeGraph m axiom touchable types constraint ci) => Groups -> Priority -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)    
+applyInteractRule :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => Groups -> Priority -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)    
 applyInteractRule groups' curPrior edgeIndex graph = do
     let edge = getEdgeFromId graph edgeIndex
     let doneEdges = concatMap getEdgesFromMultirule $ filter (MultiRule Interact [] ==) (rulesTried $ edgeCategory edge)
@@ -132,7 +132,7 @@ applyInteractRule groups' curPrior edgeIndex graph = do
                 return g
         ) graph' (map edgeId candidateEdges)
 
-applyInteractResult :: (HasTypeGraph m axiom touchable types constraint ci) => TGEdge constraint -> (TGEdge constraint, RuleResult [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+applyInteractResult :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => TGEdge constraint -> (TGEdge constraint, RuleResult [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 applyInteractResult edge (e, Error label) graph = let
     !g1 = makeIncorrect label edge graph
     !g2 = markEdgeResolved (getGroupFromEdge edge) (Resolved Interact [edgeId edge, edgeId e]) edge g1
@@ -150,7 +150,7 @@ applyInteractResult edge (e, Applied ncs) graph = do
     let g' = insertGraphs gMe2 ncs'
     return $ markInfluencesEdges (concatMap (map edgeId . getUnresolvedConstraintEdges') ncs') [edgeId edge, edgeId e] g' 
 
-applySimplifyRule :: (HasTypeGraph m axiom touchable types constraint ci) => Groups -> Priority -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci) 
+applySimplifyRule :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => Groups -> Priority -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci) 
 applySimplifyRule groups' curPrior edgeIndex graph = do
     let edge = getEdgeFromId graph edgeIndex
     if isEdgeGiven edge || not (isUnresolvedConstraintEdge groups' edge) || getPriorityFromEdge edge /= curPrior || not (sameGroups (getGroupFromEdge edge) groups') then -- && priority (edgeCategory edge) == curPrior then
@@ -170,7 +170,7 @@ applySimplifyRule groups' curPrior edgeIndex graph = do
 
             ) graph (nub $ map edgeId $ filter (\e -> isConstraintEdge e && (getPriorityFromEdge e < curPrior)) candidateEdges)
 
-applySimplifyResult :: (HasTypeGraph m axiom touchable types constraint ci) => TGEdge constraint -> (TGEdge constraint, RuleResult [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+applySimplifyResult :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => TGEdge constraint -> (TGEdge constraint, RuleResult [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 applySimplifyResult eGiven (e, Error label) graph = let
     g1 = makeIncorrect label eGiven graph
     g2 = markEdgeResolved (getGroupFromEdge eGiven) (Resolved Simplify [edgeId eGiven, edgeId e]) eGiven g1
@@ -183,7 +183,7 @@ applySimplifyResult eGiven (e, Applied ncs) graph = do
     let g' = insertGraphs gMe1 ncs'
     return $ markInfluencesEdges (concatMap (map edgeId . getUnresolvedConstraintEdges') ncs') [edgeId eGiven, edgeId e] g' 
 
-applyTopLevelReactRule :: (HasTypeGraph m axiom touchable types constraint ci) => Groups -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci) 
+applyTopLevelReactRule :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => Groups -> EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci) 
 applyTopLevelReactRule groups' edgeIndex graph = do
     let edge = getEdgeFromId graph edgeIndex
     let graph' = markEdgeTried (SingleRule TopLevelReact) edge graph
@@ -193,7 +193,7 @@ applyTopLevelReactRule groups' edgeIndex graph = do
     else
         return graph'
 
-applyReactResult :: (HasTypeGraph m axiom touchable types constraint ci) => TGEdge constraint -> RuleResult ([touchable], [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+applyReactResult :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => TGEdge constraint -> RuleResult ([touchable], [constraint]) -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 applyReactResult edge (Error label) graph = return (makeIncorrect label edge graph)
 applyReactResult _ NotApplicable graph = return graph
 applyReactResult edge (Applied (vars, ncs)) graph = do

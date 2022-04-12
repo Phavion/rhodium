@@ -63,6 +63,12 @@ class HasAxioms m axiom | m -> axiom where
     -- | Returns the list of axioms
     getAxioms :: m [axiom]
 
+class HasDiagnostics m diagnostic | m -> diagnostic where
+    -- | Put a diagnostic in the list
+    putDiagnostic :: diagnostic -> m ()
+    -- | Return the list of diagnostics
+    getDiagnostics :: m [diagnostic]
+
 -- | The monad has a type graph on which it currently works
 class HasGraph m touchable types constraint ci | m -> touchable types constraint ci where
     -- | Return the current graph
@@ -175,6 +181,7 @@ class HasOriginalConstraints m constraint touchable | m -> constraint touchable 
 class (
         FreshVariable m touchable
     ,   HasAxioms m axiom
+    ,   HasDiagnostics m diagnostic
     ,   HasGraph m touchable types constraint ci
     ,   CanCanon m touchable types constraint 
     ,   CanInteract m touchable types constraint ci
@@ -207,12 +214,13 @@ class (
     ,   HasOriginalConstraints m constraint touchable
     ,   MonadFail m
     ,   MonadIO m
-    ) => HasTypeGraph m axiom touchable types constraint ci
+    ) => HasTypeGraph m axiom touchable types constraint ci diagnostic
     
 -- | An instance, if all necessary properties are given, the type graph instance exists
 instance (
         FreshVariable m touchable
     ,   HasAxioms m axiom
+    ,   HasDiagnostics m diagnostic
     ,   HasGraph m touchable types constraint ci
     ,   CanCanon m touchable types constraint 
     ,   CanInteract m touchable types constraint ci
@@ -245,6 +253,6 @@ instance (
     ,   HasOriginalConstraints m constraint touchable
     ,   MonadFail m
     ,   MonadIO m
-    ) => HasTypeGraph m axiom touchable types constraint ci
+    ) => HasTypeGraph m axiom touchable types constraint ci diagnostic
     
          

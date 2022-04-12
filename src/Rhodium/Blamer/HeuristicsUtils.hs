@@ -8,7 +8,7 @@ import Rhodium.TypeGraphs.GraphReset
 
 import qualified Data.Map as M
 
-doWithoutConstraint :: (HasTypeGraph m axiom touchable types constraint ci) => constraint -> m a -> m a
+doWithoutConstraint :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => constraint -> m a -> m a
 doWithoutConstraint constraint' comp = do
     graph <- getGraph
     let eids = map edgeId $ filter (\e -> isConstraintEdge e && getConstraintFromEdge e == constraint') (M.elems $ edges graph)
@@ -18,7 +18,7 @@ doWithoutConstraint constraint' comp = do
     setGraph graph
     return res
 
-doWithoutEdge :: (HasTypeGraph m axiom touchable types constraint ci) => EdgeId -> m a -> m a
+doWithoutEdge :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => EdgeId -> m a -> m a
 doWithoutEdge edgeId' comp = do
     graph <- getGraph
     graph' <- removeEdge edgeId' graph

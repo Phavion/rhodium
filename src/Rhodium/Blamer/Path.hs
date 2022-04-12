@@ -44,7 +44,7 @@ extendErrorEdges gm f g = let
     in if any isPathEmpty res then error $ show ("Path empty", res) else res
 
 -- | Return all the type error edges
-getProblemEdges :: HasTypeGraph m axiom touchable types constraint ci => [axiom] -> TGGraph touchable types constraint ci -> [Path m axiom touchable types constraint ci]
+getProblemEdges :: HasTypeGraph m axiom touchable types constraint ci diagnostic => [axiom] -> TGGraph touchable types constraint ci -> [Path m axiom touchable types constraint ci]
 getProblemEdges axs g =  mergePaths (extendErrorEdges defaultRemoveModifier getErrorEdges g ++ extendErrorEdges defaultRemoveModifier (getResidualEdges axs g) g)
 
 mergePaths :: (Ord constraint, Show constraint, Eq constraint) => [Path m axiom touchable types constraint ci] -> [Path m axiom touchable types constraint ci]
@@ -85,15 +85,15 @@ participationMap paths = let
         where
             participationMap' p = M.fromList $ map (\e -> (e, 1)) $ idsFromPath p
 -- | Creates an empty path
-emptyPath :: HasTypeGraph m axiom touchable types constraint ci => Path m axiom touchable types constraint ci
+emptyPath :: HasTypeGraph m axiom touchable types constraint ci diagnostic => Path m axiom touchable types constraint ci
 emptyPath = Path (undefined, undefined, NoErrorLabel) []
 
-defaultRemoveModifier :: HasTypeGraph m axiom touchable types constraint ci => GraphModifier m axiom touchable types constraint ci
+defaultRemoveModifier :: HasTypeGraph m axiom touchable types constraint ci diagnostic => GraphModifier m axiom touchable types constraint ci
 defaultRemoveModifier (eid, _constraint, ci) g = removeEdge eid g >>= \g' -> return (g', ci)
 
 
 -- | Creates a default graph modifier, either adding a new given constraint or making an untouchable variable touchable
-defaultResidualGraphModifier :: HasTypeGraph m axiom touchable types constraint ci => GraphModifier m axiom touchable types constraint ci
+defaultResidualGraphModifier :: HasTypeGraph m axiom touchable types constraint ci diagnostic => GraphModifier m axiom touchable types constraint ci
 defaultResidualGraphModifier (eid, _constraint, ci) graph = 
     do 
     let edge = getEdgeFromId graph eid

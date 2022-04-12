@@ -66,13 +66,13 @@ resetAll g = let g' = g{
             }
 
 -- | Remove an edge and reseet the entire graph
-removeEdge :: (HasTypeGraph m axiom touchable types constraint ci) => EdgeId ->TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+removeEdge :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => EdgeId ->TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 removeEdge eid g =  do
     let g' = resetAll (deleteEdge eid g)
     simplifyGraph False $ markEdgesUnresolved [0] g'
 
 -- | Remove an edge and reseet the entire graph
-removeEdges :: (HasTypeGraph m axiom touchable types constraint ci) => [EdgeId] ->TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
+removeEdges :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => [EdgeId] ->TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 removeEdges eids g =  do
     let g' = resetAll (deleteEdges eids g)
     simplifyGraph False $ markEdgesUnresolved [0] g'

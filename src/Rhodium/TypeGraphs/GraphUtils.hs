@@ -312,11 +312,11 @@ getPossibleTypes groups' t = getGraph >>= \graph -> return (mapMaybe (\e ->
         ) (filter (\e -> isConstraintEdge e && (null groups' || groups' == getGroupFromEdge e))$ M.elems $ edges graph))
         
 -- | Get the substituted type of the given type
-getSubstType1 :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci) => types -> m types
+getSubstType1 :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci diagnostic) => types -> m types
 getSubstType1 = getSubstTypeFull [0]
 
 -- | Get the substituted type of the given type
-getSubstTypeFull :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci) 
+getSubstTypeFull :: (CompareTypes m types, HasTypeGraph m axiom touchable types constraint ci diagnostic) 
                  => Groups 
                  -> types 
                  -> m types
@@ -432,7 +432,7 @@ updateConstraintInformation eci ginitial = foldr addCi ginitial eci
                         }) eid (edges g)
                 }
 -- | Get all the neighbours from an edge id
-getNeighbours :: (HasTypeGraph m axiom touchable types constraint ci) => EdgeId -> m [TGEdge constraint]
+getNeighbours :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => EdgeId -> m [TGEdge constraint]
 getNeighbours eid = do
     graph <- getGraph
     let es = M.elems $ edges graph

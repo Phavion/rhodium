@@ -19,7 +19,7 @@ import Control.Monad.IO.Class (MonadIO(..) )
 
 
 -- | An instance for storing the axioms in the TGState
-instance Monad m => HasAxioms (TGStateM m axiom touchable types constraint ci) axiom where
+instance Monad m => HasAxioms (TGStateM m axiom touchable types constraint ci diagnostic) axiom where
     -- initializeAxioms :: [axiom] -> m ()
     initializeAxioms axioms' = do
         state <- get
@@ -29,8 +29,14 @@ instance Monad m => HasAxioms (TGStateM m axiom touchable types constraint ci) a
         state <- get
         return (axioms state)
 
+instance Monad m => HasDiagnostics (TGStateM m axiom touchable types constraint ci diagnostic) diagnostic where
+    putDiagnostic diagnostic' = do
+        state <- get
+        put (state{diagnostics = diagnostic' : diagnostics state})
+    getDiagnostics = diagnostics <$> get
+
 -- | An instance for getting a unique vertex id based on the TGState
-instance Monad m => UniqueVertex (TGStateM m axiom touchable types constraint ci) where
+instance Monad m => UniqueVertex (TGStateM m axiom touchable types constraint ci diagnostic) where
     uniqueVertex = do
         state <- get
         let curId = vertexIndex state
@@ -42,7 +48,7 @@ instance Monad m => UniqueVertex (TGStateM m axiom touchable types constraint ci
             vertexIndex = v
         })
 -- | An instance for getting a unique edge id based on the TGState
-instance Monad m => UniqueEdge (TGStateM m axiom touchable types constraint ci) where
+instance Monad m => UniqueEdge (TGStateM m axiom touchable types constraint ci diagnostic) where
     uniqueEdge = do
         state <- get
         let curId = edgeIndex state
@@ -56,7 +62,7 @@ instance Monad m => UniqueEdge (TGStateM m axiom touchable types constraint ci) 
 
 
 -- | An instance for getting a unique group from a TGState
-instance Monad m => UniqueGroup (TGStateM m axiom touchable types constraint ci) where
+instance Monad m => UniqueGroup (TGStateM m axiom touchable types constraint ci diagnostic) where
     uniqueGroup = do
         state <- get
         let curId = groupIndex state
@@ -64,7 +70,7 @@ instance Monad m => UniqueGroup (TGStateM m axiom touchable types constraint ci)
         return curId
 
 -- | An instance for detecting which variables are touchable in a graph
-instance (Show axiom, Ord touchable, Monad m, Show touchable, Show types, Show constraint, Eq touchable, Eq types, Eq constraint, HasGraph (TGStateM m axiom touchable types constraint ci) touchable types constraint ci) => IsTouchable (TGStateM m axiom touchable types constraint ci) touchable where
+instance (Show axiom, Ord touchable, Monad m, Show touchable, Show types, Show constraint, Eq touchable, Eq types, Eq constraint, HasGraph (TGStateM m axiom touchable types constraint ci diagnostic) touchable types constraint ci) => IsTouchable (TGStateM m axiom touchable types constraint ci diagnostic) touchable where
     isVertexTouchable t = do 
         g <- getGraph
         return (maybe Nothing isTouchable (find (\v -> getVariable v == Just (Variable t)) $ vertices g))
@@ -104,7 +110,7 @@ instance (Show axiom, Ord touchable, Monad m, Show touchable, Show types, Show c
 
 
 -- | An instance for the default graph in TGState
-instance (ConvertConstructor types, Show constraint, Show types, Show touchable, Ord types, Eq constraint, Eq touchable, Monad m, CanCompareTouchable touchable types) => HasGraph (TGStateM m axiom touchable types constraint ci) touchable types constraint ci where
+instance (ConvertConstructor types, Show constraint, Show types, Show touchable, Ord types, Eq constraint, Eq touchable, Monad m, CanCompareTouchable touchable types) => HasGraph (TGStateM m axiom touchable types constraint ci diagnostic) touchable types constraint ci where
     --getGraph :: m (TGGraph touchable constraint types)
     getGraph = do
         state <- get
@@ -128,7 +134,7 @@ instance (ConvertConstructor types, Show constraint, Show types, Show touchable,
         put (state{isGraphRuleApplied = False, rulesApplied = []})
 
 -- | Allows the writing of logging information that can be used for debugging information
-instance Monad m => HasLogInfo (TGStateM m axiom touchable types constraint ci) where
+instance Monad m => HasLogInfo (TGStateM m axiom touchable types constraint ci diagnostic) where
     logMsg msg = do
         state <- get 
         put (state{
@@ -137,7 +143,7 @@ instance Monad m => HasLogInfo (TGStateM m axiom touchable types constraint ci) 
     getLogs = ("Log messages: \n"++) . unlines . reverse . logs <$> get 
 
 -- | Store the original constraints for later inspection
-instance Monad m => HasOriginalConstraints (TGStateM m axiom touchable types constraint ci) constraint touchable where
+instance Monad m => HasOriginalConstraints (TGStateM m axiom touchable types constraint ci diagnostic) constraint touchable where
     setOriginalInput input = do
         state <- get
         put state{
