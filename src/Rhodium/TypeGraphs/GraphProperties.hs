@@ -66,6 +66,7 @@ class HasAxioms m axiom | m -> axiom where
 class HasDiagnostics m diagnostic | m -> diagnostic where
     -- | Put a diagnostic in the list
     putDiagnostic :: diagnostic -> m ()
+    putDiagnostics :: [diagnostic] -> m ()
     -- | Return the list of diagnostics
     getDiagnostics :: m [diagnostic]
 

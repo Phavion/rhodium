@@ -33,6 +33,7 @@ instance Monad m => HasDiagnostics (TGStateM m axiom touchable types constraint 
     putDiagnostic diagnostic' = do
         state <- get
         put (state{diagnostics = diagnostic' : diagnostics state})
+    putDiagnostics = mapM_ putDiagnostic
     getDiagnostics = diagnostics <$> get
 
 -- | An instance for getting a unique vertex id based on the TGState
