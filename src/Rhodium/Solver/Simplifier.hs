@@ -8,6 +8,7 @@ import Prelude hiding (interact)
 
 import Data.Maybe
 import Data.List (partition, nub, isSuffixOf, (\\))
+import qualified Data.Map as M
 
 import Control.Monad
 
@@ -79,7 +80,8 @@ addUnresolvedConstraints cs g = g{
 applyCanonRule :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => EdgeId -> TGGraph touchable types constraint ci -> m(TGGraph touchable types constraint ci)
 applyCanonRule edgeIndex graph = do
     let edge = getEdgeFromId graph edgeIndex
-    result <- canon (isEdgeGiven edge) (getConstraintFromEdge edge)
+    let givens = getConstraintFromEdge <$> filter isEdgeGiven (M.elems $ edges graph)
+    result <- canon (isEdgeGiven edge) (getConstraintFromEdge edge) givens
     let graph' = markEdgeTried (SingleRule Canon) edge graph
     if not (isErrorResult result) then
         if isJust (isApplied result) then do

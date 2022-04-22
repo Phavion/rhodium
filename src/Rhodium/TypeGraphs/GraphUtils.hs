@@ -62,7 +62,7 @@ getResolved _ _ = error "Not a constraint edge"
 -- | Checks whether an edge is given (or wanted)
 isEdgeGiven :: TGEdge constraint -> Bool
 isEdgeGiven TGEdge{edgeCategory = ec@TGConstraint{}} = isGiven ec
-isEdgeGiven _ = error "Only constraint edges can be given"
+isEdgeGiven _ = False
 
 -- | Check if the edge is an original edge
 isEdgeOriginal :: TGEdge constraint -> Bool

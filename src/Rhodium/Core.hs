@@ -40,7 +40,7 @@ solve options axioms given wanted touchables = do
         }
         blameError (typeHeuristics options) typeErrorOptions touchables (trace (show simpG) simpG)
     else
-        return (graphToSolveResult axioms (includeTouchables options) touchables simpG)--(trace (show simpG) simpG))
+        return (graphToSolveResult axioms (includeTouchables options) touchables simpG) --(trace (show simpG) simpG))
   
 constructGraph :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => [constraint] -> [constraint] -> [touchable] -> m (TGGraph touchable types constraint ci)
 constructGraph given wanted touchables = do

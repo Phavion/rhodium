@@ -20,6 +20,7 @@ class CanCanon m touchable types constraint | m -> touchable types constraint wh
     -- | The canon rule
     canon   :: Bool -- ^ Whether the constraint was given 
             -> constraint -- ^ The constraint
+            -> [constraint] -- Current given constraints
             -> m (RuleResult ([touchable], [(touchable, types)], [constraint])) -- ^ The result, with a list of new touchables, a substitution and a list of new constraints
 
 -- | The constraint has a interact rule
