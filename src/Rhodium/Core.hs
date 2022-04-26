@@ -40,7 +40,7 @@ solve options axioms given wanted touchables = do
         }
         blameError (typeHeuristics options) typeErrorOptions touchables (trace (show simpG) simpG)
     else
-        return (graphToSolveResult axioms (includeTouchables options) touchables simpG) --(trace (show simpG) simpG))
+        return (graphToSolveResult axioms (includeTouchables options) touchables (trace (show simpG) simpG))
   
 constructGraph :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => [constraint] -> [constraint] -> [touchable] -> m (TGGraph touchable types constraint ci)
 constructGraph given wanted touchables = do
@@ -49,10 +49,10 @@ constructGraph given wanted touchables = do
         let g = mergeGraphs emptyTGGraph wanted'
         given' <- mapM (convertConstraint [] True True [groupIndex] 0) given
         let g' = mergeGraphs g given'
-        let wantedTch = concatMap getFreeVariables wanted
+        let wantedTch = concatMap getFreeVariables (trace ("TOUCHABLES: " ++ show touchables) wanted)
         let givenTch = concatMap getFreeVariables given
         let wTouchables = markTouchables (map (\v -> (v, 1)) (filter (\t -> t `elem` wantedTch && t `notElem` givenTch) touchables)) g'
-        let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) wTouchables
+        let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) $ trace ("WTOUCHABLES: " ++ show wTouchables) wTouchables
         -- let gTouchables = markTouchables (map (\v -> (v, 1)) touchables) g'
         setGivenTouchables (concatMap getFreeVariables given)
         return (markEdgesUnresolved [0] gTouchables)
