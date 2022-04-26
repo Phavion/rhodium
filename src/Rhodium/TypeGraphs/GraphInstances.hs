@@ -88,7 +88,7 @@ instance (Show axiom, Ord touchable, Monad m, Show touchable, Show types, Show c
                 (Just p1, Just p2) -> 
                     return (
                         if p1 == p2 then
-                            t1 < t2
+                            t1 > t2
                         else
                             p1 < p2
                         {-if (p1 < currentPrior && p2 < currentPrior) || p1 == p2 then

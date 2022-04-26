@@ -52,9 +52,9 @@ constructGraph given wanted touchables = do
         let wantedTch = concatMap getFreeVariables (trace ("TOUCHABLES: " ++ show touchables) wanted)
         let givenTch = concatMap getFreeVariables given
         let wTouchables = markTouchables (map (\v -> (v, 1)) (filter (\t -> t `elem` wantedTch && t `notElem` givenTch) touchables)) g'
-        let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) $ trace ("WTOUCHABLES: " ++ show wTouchables) wTouchables
+        let gTouchables =  markTouchables (map (\v -> (v, 0)) (filter (`elem` givenTch) touchables)) wTouchables
         -- let gTouchables = markTouchables (map (\v -> (v, 1)) touchables) g'
-        setGivenTouchables (concatMap getFreeVariables given)
+        setGivenTouchables (concatMap getFreeVariables $ trace ("GTOUCHABLES: " ++ show gTouchables) given)
         return (markEdgesUnresolved [0] gTouchables)
 
 -- | Solves the given constraints and either returns a substitution or Nothing. Gives manual control over the solve options

@@ -17,6 +17,7 @@ import Rhodium.TypeGraphs.Graph
 import Rhodium.TypeGraphs.GraphUtils
 import Rhodium.TypeGraphs.GraphProperties
 import Rhodium.TypeGraphs.Touchables
+import Debug.Trace (trace)
 
 
 -- | Simplify a given graph
@@ -204,7 +205,7 @@ applyReactResult edge (Applied (vars, ncs)) graph = do
     ncs' <- mapM (convertConstraint [edgeId edge] False (isEdgeGiven edge) (getGroupFromEdge edge) (priority (edgeCategory edge))) ncs
     return 
         $ markInfluencesEdges (concatMap (map edgeId . getUnresolvedConstraintEdges' ) ncs') [edgeId edge] 
-        $ markTouchables (map (\v -> (v, priority $ edgeCategory edge)) vars) 
+        $ markTouchables (map (\v -> (v, priority $ edgeCategory edge)) $ trace ("REACT TCHS: " ++ show vars) vars) 
         $ insertGraphs g' ncs'
 
 resolvePriorityConstraints :: (Show touchable, Show types, Monad m, Eq constraint, IsEquality axiom types constraint touchable, Show constraint) => Bool -> Groups -> Priority -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
