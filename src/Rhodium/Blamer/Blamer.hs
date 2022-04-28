@@ -33,7 +33,7 @@ blameError typeHeuristics typeErrorOptions ts g = do
     simpG' <- modifyResolvedErrors (createTypeError typeErrorOptions) simpG -- (trace (show simpG) simpG)
     logs <- getLogs
     liftIO (putStrLn logs)
-    return (graphToSolveResult axs False ts (trace logs simpG'))
+    return (graphToSolveResult axs False ts simpG') -- (trace logs simpG'))
 
 blamePaths :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => [EdgeId] -> Heuristics m axiom touchable types constraint ci diagnostic -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 blamePaths notAllowedInPaths typeHeuristics g = do
