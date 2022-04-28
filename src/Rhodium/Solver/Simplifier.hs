@@ -17,7 +17,6 @@ import Rhodium.TypeGraphs.Graph
 import Rhodium.TypeGraphs.GraphUtils
 import Rhodium.TypeGraphs.GraphProperties
 import Rhodium.TypeGraphs.Touchables
-import Debug.Trace (trace)
 
 
 -- | Simplify a given graph
