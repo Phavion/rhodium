@@ -20,7 +20,6 @@ import Control.Monad.IO.Class (MonadIO, liftIO  )
 import qualified Data.Map as M
 
 import Control.Arrow
-import Debug.Trace
 
 
 -- | Try to improve the found errors and residual constraints using the provided heuristics
@@ -33,14 +32,14 @@ blameError typeHeuristics typeErrorOptions ts g = do
     simpG' <- modifyResolvedErrors (createTypeError typeErrorOptions) simpG -- (trace (show simpG) simpG)
     logs <- getLogs
     liftIO (putStrLn logs)
-    return (graphToSolveResult axs False ts simpG') -- (trace logs simpG'))
+    return (graphToSolveResult axs False ts simpG') --(trace logs simpG'))
 
 blamePaths :: (HasTypeGraph m axiom touchable types constraint ci diagnostic) => [EdgeId] -> Heuristics m axiom touchable types constraint ci diagnostic -> TGGraph touchable types constraint ci -> m (TGGraph touchable types constraint ci)
 blamePaths notAllowedInPaths typeHeuristics g = do
     setGraph g
     axs <- getAxioms 
     let ps = sortPaths $ map (excludeEdges notAllowedInPaths) $ getProblemEdges axs g
-    if any isPathEmpty (trace (show ps) ps) then
+    if any isPathEmpty ps then
         error $ show ("Any path empty", notAllowedInPaths)
     else if null ps then
         return g
